@@ -1,5 +1,5 @@
 {
-  "name": "promo-codes-worker",
+  "name": "stt-worker",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -8,8 +8,8 @@
     "build": "bun i && tsc"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20250401.0",
-    "typescript": "^5.8.2"
+    "@cloudflare/workers-types": "^4.20250409.0",
+    "typescript": "^5.8.3"
   },
   "dependencies": {}
 }

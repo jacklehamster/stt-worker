@@ -1,3 +1,3 @@
-# cloudflare-worker
+# stt-worker
 
-Template for building a Cloudflare worker repo
+Speech to text worker
