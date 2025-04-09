@@ -1,3 +1,3 @@
 # stt-worker
 
-Speech to text worker
+Speech to text worker.
