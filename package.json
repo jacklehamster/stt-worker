@@ -9,6 +9,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250409.0",
+    "google-auth-library": "^9.15.1",
     "typescript": "^5.8.3"
   },
   "dependencies": {}
