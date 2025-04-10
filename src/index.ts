@@ -19,27 +19,66 @@ export default {
           <style>
             body { font-family: Arial, sans-serif; padding: 20px; }
             pre { background: #f0f0f0; padding: 10px; }
+            button { margin: 5px; }
           </style>
         </head>
         <body>
           <h1>Speech-to-Text Demo</h1>
+          <button id="recordButton">Start Recording</button>
+          <button id="stopButton" disabled>Stop Recording</button>
           <input type="file" id="audioFile" accept="audio/*">
-          <button onclick="uploadAudio()">Transcribe</button>
+          <button onclick="uploadFile()">Transcribe File</button>
           <pre id="result">Transcription will appear here...</pre>
 
           <script>
-            async function uploadAudio() {
+            let mediaRecorder;
+            let audioChunks = [];
+
+            // Microphone recording
+            document.getElementById("recordButton").addEventListener("click", async () => {
+              const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+              mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" });
+
+              mediaRecorder.ondataavailable = (event) => {
+                audioChunks.push(event.data);
+              };
+
+              mediaRecorder.onstop = async () => {
+                const audioBlob = new Blob(audioChunks, { type: "audio/webm;codecs=opus" });
+                audioChunks = []; // Reset for next recording
+                await uploadAudio(audioBlob);
+                stream.getTracks().forEach(track => track.stop()); // Stop microphone
+              };
+
+              audioChunks = [];
+              mediaRecorder.start();
+              document.getElementById("recordButton").disabled = true;
+              document.getElementById("stopButton").disabled = false;
+            });
+
+            document.getElementById("stopButton").addEventListener("click", () => {
+              mediaRecorder.stop();
+              document.getElementById("recordButton").disabled = false;
+              document.getElementById("stopButton").disabled = true;
+            });
+
+            // File upload (existing functionality)
+            async function uploadFile() {
               const fileInput = document.getElementById("audioFile");
               const file = fileInput.files[0];
               if (!file) {
                 alert("Please select an audio file");
                 return;
               }
+              await uploadAudio(file);
+            }
 
+            // Shared upload function
+            async function uploadAudio(audioBlob) {
               const response = await fetch("", {
                 method: "POST",
-                body: file,
-                headers: { "Content-Type": file.type },
+                body: audioBlob,
+                headers: { "Content-Type": audioBlob.type },
               });
 
               if (!response.ok) {
@@ -57,6 +96,7 @@ export default {
       return new Response(html, {
         headers: {
           "Content-Type": "text/html",
+          "Cache-Control": "public, max-age=3600",
         },
       });
     }
@@ -78,6 +118,7 @@ export default {
       return new Response("No audio data provided", { status: 400 });
     }
 
+    // Convert ArrayBuffer to base64
     const audioBytes = new Uint8Array(audioBuffer);
     const binaryString = String.fromCharCode(...audioBytes);
     const audioBase64 = btoa(binaryString);
@@ -110,12 +151,12 @@ export default {
       return new Response(`Fetch error: ${err.message}`, { status: 503 });
     }
 
-    if (!sttResponse?.ok) {
-      const errorText = await sttResponse?.text();
+    if (!sttResponse.ok) {
+      const errorText = await sttResponse.text();
       return new Response(`STT API error: ${errorText}`, { status: 500 });
     }
 
-    const result = await sttResponse.json<{ results?: { alternatives?: { transcript?: string }[] }[] }>();
+    const result: any = await sttResponse.json();
     const transcription = result.results?.[0]?.alternatives?.[0]?.transcript || "No transcription available";
 
     return new Response(JSON.stringify({ text: transcription }), {
@@ -127,7 +168,8 @@ export default {
   },
 };
 
-async function getAuthToken(credentials: any) {
+async function getAuthToken(credentials: string) {
+  const { JWT } = await import("google-auth-library");
   const creds = JSON.parse(credentials);
   const client = new JWT({
     email: creds.client_email,
