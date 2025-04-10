@@ -78,7 +78,10 @@ export default {
       return new Response("No audio data provided", { status: 400 });
     }
 
-    const audioBase64 = Buffer.from(audioBuffer).toString("base64");
+    const audioBytes = new Uint8Array(audioBuffer);
+    const binaryString = String.fromCharCode(...audioBytes);
+    const audioBase64 = btoa(binaryString);
+
     const sttApiUrl = "https://speech.googleapis.com/v1/speech:recognize";
     const authToken = await getAuthToken(env.SHEETS_SERVICE_KEY_JSON);
 
