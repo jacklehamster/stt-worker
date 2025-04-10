@@ -169,7 +169,6 @@ export default {
 };
 
 async function getAuthToken(credentials: string) {
-  const { JWT } = await import("google-auth-library");
   const creds = JSON.parse(credentials);
   const client = new JWT({
     email: creds.client_email,
